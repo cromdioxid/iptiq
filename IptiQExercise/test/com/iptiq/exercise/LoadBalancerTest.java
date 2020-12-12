@@ -11,21 +11,16 @@ import org.junit.Test;
 public class LoadBalancerTest {
 	
 	private LoadBalancer loadBalancer;
-	private Provider p1;
-	private Provider p2;
 	
 	@Before
 	public void setUp() {
-		loadBalancer = new LoadBalancer();
-		p1 = new Provider();
-		loadBalancer.registerProvider(p1);
-		p2 = new Provider();
-		loadBalancer.registerProvider(p2);
+		SelectionStrategy randomStrategy = new RandomSelectionStrategy();
+		loadBalancer = new LoadBalancer(randomStrategy);
 	}
 
 	@Test
 	public void testRegisterProvider() {
-		for (int i = 2; i < 10; i++) {
+		for (int i = 0; i < 10; i++) {
 			Provider provider = new Provider();
 			assertTrue(loadBalancer.registerProvider(provider));
 		}
@@ -36,10 +31,32 @@ public class LoadBalancerTest {
 	@Test
 	public void getRandomProvider() {
 		Set<String> registeredProviders = new HashSet<String>();
+		Provider p1 = new Provider();
+		loadBalancer.registerProvider(p1);
 		registeredProviders.add(p1.get());
+		Provider p2 = new Provider();
+		registeredProviders.add(p2.get());
 		registeredProviders.add(p2.get());
 		String provider = loadBalancer.get();
 		assertTrue(registeredProviders.contains(provider));
+	}
+	
+	@Test
+	public void getRoundRobinProviderTest() {
+		RoundRobinSelectionStrategy rrStrategy = new RoundRobinSelectionStrategy();
+		loadBalancer.setSelectionStrategy(rrStrategy);
+		Provider p1 = new Provider();
+		loadBalancer.registerProvider(p1);
+		Provider p2 = new Provider();
+		loadBalancer.registerProvider(p2);
+		assertEquals(p1.get(), loadBalancer.get());
+		assertEquals(p2.get(), loadBalancer.get());
+		Provider p3 = new Provider();
+		loadBalancer.registerProvider(p3);
+		assertEquals(p1.get(), loadBalancer.get());
+		assertEquals(p2.get(), loadBalancer.get());
+		assertEquals(p3.get(), loadBalancer.get());
+		assertEquals(p1.get(), loadBalancer.get());
 	}
 
 }

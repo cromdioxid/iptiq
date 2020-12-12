@@ -1,11 +1,16 @@
 package com.iptiq.exercise;
 
 import java.util.HashMap;
-import java.util.Random;
+import java.util.LinkedHashMap;
 
 public class LoadBalancer {
 	
-	private HashMap<String, Provider> providersMap = new HashMap<String, Provider>();
+	private HashMap<String, Provider> providersMap = new LinkedHashMap<String, Provider>();
+	private SelectionStrategy strategy;
+	
+	public LoadBalancer(SelectionStrategy strategy) {
+		this.strategy = strategy;
+	}
 	
 	public boolean registerProvider(Provider provider) {
 		if (providersMap.size() < 10) {
@@ -19,11 +24,11 @@ public class LoadBalancer {
 	}
 	
 	public String get() {
-		String[] keys = providersMap.keySet().toArray(new String[0]);
-		Random r = new Random();
-		int index = r.nextInt(keys.length);
-		
-		return providersMap.get(keys[index]).get();
+		return strategy.get(providersMap).get();
+	}
+	
+	public void setSelectionStrategy(SelectionStrategy strategy) {
+		this.strategy = strategy;
 	}
 
 }

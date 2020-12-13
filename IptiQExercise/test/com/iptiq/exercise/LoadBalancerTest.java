@@ -15,7 +15,7 @@ public class LoadBalancerTest {
 	@Before
 	public void setUp() {
 		SelectionStrategy randomStrategy = new RandomSelectionStrategy();
-		loadBalancer = new LoadBalancer(randomStrategy);
+		loadBalancer = new LoadBalancer(randomStrategy,3);
 	}
 
 	@Test
@@ -29,7 +29,7 @@ public class LoadBalancerTest {
 	}
 	
 	@Test
-	public void getRandomProvider() {
+	public void getRandomProvider() throws CapacityLimitException {
 		Set<String> registeredProviders = new HashSet<String>();
 		Provider p1 = new Provider();
 		loadBalancer.registerProvider(p1);
@@ -42,7 +42,7 @@ public class LoadBalancerTest {
 	}
 	
 	@Test
-	public void getRoundRobinProviderTest() {
+	public void getRoundRobinProviderTest() throws CapacityLimitException {
 		RoundRobinSelectionStrategy rrStrategy = new RoundRobinSelectionStrategy();
 		loadBalancer.setSelectionStrategy(rrStrategy);
 		Provider p1 = new Provider();
@@ -60,7 +60,7 @@ public class LoadBalancerTest {
 	}
 	
 	@Test
-	public void excludeProviderTest() {
+	public void excludeProviderTest() throws CapacityLimitException {
 		RoundRobinSelectionStrategy rrStrategy = new RoundRobinSelectionStrategy();
 		loadBalancer.setSelectionStrategy(rrStrategy);
 		Provider p1 = new Provider();
@@ -78,7 +78,7 @@ public class LoadBalancerTest {
 	}
 	
 	@Test
-	public void checkProviders() {
+	public void checkProviders() throws CapacityLimitException {
 		Provider p1 = new Provider();
 		loadBalancer.registerProvider(p1);
 		Provider p2 = new Provider();
@@ -90,7 +90,7 @@ public class LoadBalancerTest {
 	}
 	
 	@Test
-	public void checkProviderAlive() {
+	public void checkProviderAlive() throws CapacityLimitException {
 		RoundRobinSelectionStrategy rrStrategy = new RoundRobinSelectionStrategy();
 		loadBalancer.setSelectionStrategy(rrStrategy);
 		Provider p1 = new Provider();
@@ -103,11 +103,25 @@ public class LoadBalancerTest {
 		assertEquals(p1.get(), loadBalancer.get());
 		p2.setIsAlive(true);
 		loadBalancer.checkProviders();
-		assertEquals(p1.get(), loadBalancer.get());
-		assertEquals(p1.get(), loadBalancer.get());
 		loadBalancer.checkProviders();
 		assertEquals(p1.get(), loadBalancer.get());
 		assertEquals(p2.get(), loadBalancer.get());
+	}
+	
+	@Test(expected = CapacityLimitException.class)
+	public void maxNumberOfRequests() throws CapacityLimitException {
+		Provider p1 = new Provider();
+		loadBalancer.registerProvider(p1);
+		Provider p2 = new Provider();
+		loadBalancer.registerProvider(p2);
+		loadBalancer.get();
+		loadBalancer.get();
+		loadBalancer.get();
+		loadBalancer.get();
+		loadBalancer.get();
+		loadBalancer.get();
+		loadBalancer.get();
+		loadBalancer.get();
 	}
 
 }

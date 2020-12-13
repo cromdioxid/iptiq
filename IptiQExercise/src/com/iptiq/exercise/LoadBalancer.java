@@ -10,16 +10,20 @@ public class LoadBalancer {
 	private HashMap<String, Provider> providersMap = new LinkedHashMap<String, Provider>();
 	private HashMap<String, Provider> excludedProvidersMap = new HashMap<String, Provider>();
 	private List<String> okChecks = new ArrayList<String>();
+	private HashMap<String, Integer> requests = new HashMap<String, Integer>();
 	private SelectionStrategy strategy;
+	private int availableRequests;
 	
-	public LoadBalancer(SelectionStrategy strategy) {
+	public LoadBalancer(SelectionStrategy strategy, int availableRequests) {
 		this.strategy = strategy;
+		this.availableRequests = availableRequests;
 	}
 	
 	public boolean registerProvider(Provider provider) {
 		//the total number of accepted providers is 10
 		if ((providersMap.size() + excludedProvidersMap.size()) < 10) {
 			providersMap.put(provider.get(), provider);
+			requests.put(provider.get(), availableRequests);
 			return true;
 		} else {
 			//Return false if the max number of
@@ -28,8 +32,27 @@ public class LoadBalancer {
 		}
 	}
 	
-	public String get() {
-		return strategy.get(providersMap).get();
+	public String get() throws CapacityLimitException {
+		List<String> ids = new ArrayList<String>();
+		for (String id : providersMap.keySet()) {
+			ids.add(new String(id));
+		}
+		String providerId = strategy.get(providersMap).get();
+		ids.remove(providerId);
+		while (ids.size() > 0 && requests.get(providerId) <= 0) {
+			providerId = strategy.get(providersMap).get();
+			ids.remove(providerId);
+		}
+		int value = requests.get(providerId);
+		
+		if (value > 0) {
+			value--;
+			requests.put(providerId, value);
+			return providerId;
+		} else {
+			throw new CapacityLimitException("Requests limit exceeded");
+		}
+		
 	}
 	
 	public void setSelectionStrategy(SelectionStrategy strategy) {
@@ -57,6 +80,7 @@ public class LoadBalancer {
 		}
 		excludedProvidersMap.remove(id);
 		providersMap.put(id, provider);
+		requests.put(provider.get(), availableRequests);
 		return true;
 	}
 	
@@ -83,5 +107,6 @@ public class LoadBalancer {
 			}
 		}
 	}
+	
 
 }

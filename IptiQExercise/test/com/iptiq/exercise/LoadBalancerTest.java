@@ -58,5 +58,34 @@ public class LoadBalancerTest {
 		assertEquals(p3.get(), loadBalancer.get());
 		assertEquals(p1.get(), loadBalancer.get());
 	}
+	
+	@Test
+	public void excludeProviderTest() {
+		RoundRobinSelectionStrategy rrStrategy = new RoundRobinSelectionStrategy();
+		loadBalancer.setSelectionStrategy(rrStrategy);
+		Provider p1 = new Provider();
+		loadBalancer.registerProvider(p1);
+		Provider p2 = new Provider();
+		loadBalancer.registerProvider(p2);
+		assertTrue(loadBalancer.excludeProvider(p1.get()));
+		assertFalse(loadBalancer.excludeProvider(p1.get()));
+		assertNotEquals(p1.get(), loadBalancer.get());
+		assertNotEquals(p1.get(), loadBalancer.get());
+		assertTrue(loadBalancer.includeProvider(p1.get()));
+		assertEquals(p2.get(), loadBalancer.get());
+		assertEquals(p1.get(), loadBalancer.get());
+		assertFalse(loadBalancer.includeProvider(p1.get()));
+	}
+	@Test
+	public void checkProviders() throws InterruptedException {
+		Provider p1 = new Provider();
+		loadBalancer.registerProvider(p1);
+		Provider p2 = new Provider();
+		p2.setIsAlive(false);
+		loadBalancer.registerProvider(p2);
+		loadBalancer.checkProviders();
+		assertEquals(p1.get(), loadBalancer.get());
+		assertEquals(p1.get(), loadBalancer.get());
+	}
 
 }

@@ -1,12 +1,15 @@
 package com.iptiq.exercise;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 
 public class LoadBalancer {
 	
 	private HashMap<String, Provider> providersMap = new LinkedHashMap<String, Provider>();
 	private HashMap<String, Provider> excludedProvidersMap = new HashMap<String, Provider>();
+	private List<String> okChecks = new ArrayList<String>();
 	private SelectionStrategy strategy;
 	
 	public LoadBalancer(SelectionStrategy strategy) {
@@ -58,12 +61,25 @@ public class LoadBalancer {
 	}
 	
 	public void checkProviders() {
-		System.out.println("check providers");
 		for (String key : providersMap.keySet()) {
 			Provider provider = providersMap.get(key);
 			if (!provider.check()) {
 				excludeProvider(key);
-				System.out.println("exclude provider");
+			}
+		}
+		
+		//check if excluded providers are alive
+		for (String key : excludedProvidersMap.keySet()) {
+			Provider provider = excludedProvidersMap.get(key);
+			if (provider.check()) {
+				if (okChecks.contains(provider.get())) {
+					includeProvider(provider.get());
+					okChecks.remove(provider.get());
+				} else {
+					okChecks.add(provider.get());
+				}
+			} else {
+				okChecks.remove(provider.get());
 			}
 		}
 	}
